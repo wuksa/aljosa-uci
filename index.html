@@ -111,8 +111,12 @@
   #tiles { display: grid; gap: var(--gap, 8px); }
   .tile { border-radius: 18%; background: var(--tile); color: var(--tile-ink);
     border: 3px solid var(--tile-border); box-shadow: 0 4px 0 var(--tile-border);
-    display: grid; place-items: center; font-weight: 800; line-height: 1;
+    display: grid; place-items: center; font-weight: 800; line-height: 1; position: relative; cursor: pointer;
     transition: background .2s, transform .15s, border-color .2s; }
+  .tile:active { transform: scale(.94); }
+  .tile .sticker { position: absolute; top: 3%; right: 3%; font-size: .55em; line-height: 1;
+    pointer-events: none; animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+  .tile[data-len="2"] .sticker { font-size: .7em; }
   .tile.over { background: #fff3c4; border-color: #ffb703; transform: scale(1.1); }
   .tile.ok { background: var(--ok); border-color: #26a352; color: #fff; box-shadow: 0 4px 0 #26a352; }
   .tile.bad { background: var(--bad); border-color: #d63a3f; color: #fff; animation: shake .45s; }
@@ -312,7 +316,7 @@ function buildRound(m) {
   tilesEl.innerHTML = '';
   for (const t of tiles) {
     const el = document.createElement('div');
-    el.className = 'tile'; el.textContent = t; el.dataset.key = t;
+    el.className = 'tile'; el.textContent = t; el.dataset.key = t; el.dataset.len = t.length;
     tilesEl.appendChild(el);
   }
   progressEl.innerHTML = items.map(() => '<span>⭐</span>').join('');
@@ -327,9 +331,9 @@ function showItem() {
   wordEl.textContent = ''; wordEl.classList.remove('show');
   for (const el of tilesEl.children) el.classList.remove('ok', 'bad', 'hint', 'over');
   card.className = ''; card.style.transform = ''; card.style.opacity = '';
-  $('#hint').textContent = it.kind ? 'Koliko je? Prevuci zadatak na pravi broj'
-                         : mode === 'num' ? 'Koliko ih ima? Prevuci sličicu na pravi broj'
-                         : 'Prevuci sličicu na pravo slovo';
+  $('#hint').textContent = it.kind ? 'Koliko je? Prevuci zadatak ili dodirni pravi broj'
+                         : mode === 'num' ? 'Koliko ih ima? Prevuci sličicu ili dodirni pravi broj'
+                         : 'Prevuci sličicu ili dodirni pravo slovo';
   const pics = n => Array(n).fill(`<span class="pic">${it.pic}</span>`).join('');
   if (it.kind === 'add') {
     card.innerHTML = `<div class="math"><div class="row"><div class="grp">${pics(it.a)}</div><span class="op">+</span><div class="grp">${pics(it.b)}</div></div><div class="expr">${it.expr} = ?</div></div>`;
@@ -446,11 +450,24 @@ function endDrag(e) {
   if (!d.moved) { card.style.transform = ''; say(items[idx].ask || items[idx].speak); return; } // dodir = izgovori reč
   const t = e.type === 'pointerup' ? tileAt(e.clientX, e.clientY) : null;
   if (!t) { card.style.transform = ''; return; }
-  if (t.dataset.key === items[idx].key) correct(t, e.clientX - d.x0, e.clientY - d.y0);
-  else wrong(t);
+  choose(t);
 }
 card.addEventListener('pointerup', endDrag);
 card.addEventListener('pointercancel', endDrag);
+
+function choose(t) {
+  if (t.dataset.key === items[idx].key) correct(t);
+  else wrong(t);
+}
+
+// Odgovor i samim dodirom na slovo / broj
+tilesEl.addEventListener('click', e => {
+  const t = e.target.closest('.tile');
+  if (!t || busy || drag) return;
+  ensureAudio();
+  card.classList.remove('pop');
+  choose(t);
+});
 
 function tileAt(x, y) {
   for (const el of tilesEl.children) {
@@ -461,10 +478,19 @@ function tileAt(x, y) {
   return null;
 }
 
-function correct(tile, curDx, curDy) {
+function correct(tile) {
   busy = true;
   const it = items[idx];
   tile.classList.add('ok');
+  // kod slova na pogođenom slovu ostaje mala sličica do kraja runde
+  if (!it.kind && mode !== 'num' && !tile.querySelector('.sticker')) {
+    setTimeout(() => {
+      const s = document.createElement('span');
+      s.className = 'sticker';
+      s.innerHTML = it.pic;
+      tile.appendChild(s);
+    }, 400);
+  }
   const tr = tile.getBoundingClientRect(), sr = slot.getBoundingClientRect();
   const dx = tr.left + tr.width / 2 - (sr.left + sr.width / 2);
   const dy = tr.top + tr.height / 2 - (sr.top + sr.height / 2);
