@@ -88,9 +88,32 @@
   .round-btn { width: 56px; height: 56px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow);
     font-size: 28px; display: grid; place-items: center; }
   .round-btn:active { transform: translateY(3px); }
-  #progress { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; font-size: clamp(18px, 3.4vmin, 30px); }
-  #progress span { filter: grayscale(1) opacity(.35); transition: filter .3s, transform .3s; }
-  #progress span.on { filter: none; transform: scale(1.15); }
+  #progress, .progress { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; font-size: clamp(18px, 3.4vmin, 30px); }
+  #progress span, .progress span { filter: grayscale(1) opacity(.35); transition: filter .3s, transform .3s; }
+  #progress span.on, .progress span.on { filter: none; transform: scale(1.15); }
+
+  /* ---------- SLAGANJE RIJEČI ---------- */
+  #words { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  #wtop { flex: 0 0 52%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vmin; min-height: 0; }
+  .hint { font-size: clamp(15px, 2.6vmin, 22px); opacity: .7; font-weight: 600; text-align: center; }
+  #wcard { width: var(--ws, 160px); height: var(--ws, 160px); border-radius: 26px; background: var(--card); box-shadow: var(--shadow);
+    display: grid; place-items: center; cursor: pointer; }
+  #wcard .pic { line-height: 1; pointer-events: none; }
+  #wcard.pop { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+  #slots { display: flex; gap: var(--sg, 10px); }
+  .slot { width: var(--ss, 80px); height: var(--ss, 80px); border-radius: 18%; border: 4px dashed #b9c6f5;
+    background: rgba(255,255,255,.55); display: grid; place-items: center; font-weight: 800; line-height: 1;
+    color: var(--tile-ink); font-size: calc(var(--ss, 80px) * .58); transition: background .2s, border-color .2s; }
+  .slot.dig { font-size: calc(var(--ss, 80px) * .44); }
+  .slot.next { border-color: #ffb703; background: #fff8dc; }
+  .slot.filled { border-style: solid; border-color: var(--tile-border); background: #fff; animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+  #slots.done .slot { background: var(--ok); border-color: #26a352; color: #fff; }
+  #wboard { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  #wtiles { display: grid; gap: var(--gap, 10px); }
+  #wtiles .tile { touch-action: none; }
+  #wtiles .tile.dragging { transition: none; z-index: 20; box-shadow: 0 14px 30px rgba(0,0,0,.25); }
+  #wtiles .tile.fly { transition: transform .3s ease-in, opacity .3s ease-in; z-index: 20; }
+  #wtiles .tile.used { visibility: hidden; }
 
   #top { flex: 0 0 40%; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
   #hint { font-size: clamp(15px, 2.6vmin, 22px); opacity: .7; margin-bottom: 1vmin; font-weight: 600; text-align: center; }
@@ -161,11 +184,15 @@
         <h2>Latinica</h2>
         <button class="mode" data-mode="latU"><span class="badge">ABC</span>Velika slova</button>
         <button class="mode" data-mode="latL"><span class="badge">abc</span>Mala slova</button>
+        <button class="mode" data-mode="wordLatU"><span class="badge">LAV</span>Riječi velikim slovima</button>
+        <button class="mode" data-mode="wordLatL"><span class="badge">lav</span>Riječi malim slovima</button>
       </div>
       <div class="group cyr">
         <h2>Ćirilica</h2>
         <button class="mode" data-mode="cyrU"><span class="badge">АБВ</span>Velika slova</button>
         <button class="mode" data-mode="cyrL"><span class="badge">абв</span>Mala slova</button>
+        <button class="mode" data-mode="wordCyrU"><span class="badge">ЛАВ</span>Riječi velikim slovima</button>
+        <button class="mode" data-mode="wordCyrL"><span class="badge">лав</span>Riječi malim slovima</button>
       </div>
     </div>
   </div>
@@ -173,9 +200,9 @@
 
 <div id="game" class="screen hidden">
   <header>
-    <button class="round-btn" id="homeBtn" aria-label="Meni">🏠</button>
+    <button class="round-btn home-btn" id="homeBtn" aria-label="Meni">🏠</button>
     <div id="progress"></div>
-    <button class="round-btn" id="soundBtn" aria-label="Zvuk">🔊</button>
+    <button class="round-btn sound-btn" id="soundBtn" aria-label="Zvuk">🔊</button>
   </header>
   <section id="top">
     <div id="hint">Prevuci sličicu na pravo slovo</div>
@@ -183,6 +210,20 @@
     <div id="word"></div>
   </section>
   <section id="board"><div id="tiles"></div></section>
+</div>
+
+<div id="words" class="screen hidden">
+  <header>
+    <button class="round-btn home-btn" aria-label="Meni">🏠</button>
+    <div id="wprogress" class="progress"></div>
+    <button class="round-btn sound-btn" aria-label="Zvuk">🔊</button>
+  </header>
+  <section id="wtop">
+    <div class="hint">Složi riječ: prevuci ili dodiruj slova redom</div>
+    <div id="wcard"></div>
+    <div id="slots"></div>
+  </section>
+  <section id="wboard"><div id="wtiles"></div></section>
 </div>
 
 <div id="end" class="screen hidden">
@@ -262,7 +303,7 @@ const NUM_PICS = ['🍎','🐤','⭐','🎈','🐟','🍓','🚗','🌼','🐞',
 const ROUND_SIZE = 10;
 
 const $ = s => document.querySelector(s);
-const screens = { menu: $('#menu'), game: $('#game'), end: $('#end') };
+const screens = { menu: $('#menu'), game: $('#game'), words: $('#words'), end: $('#end') };
 const card = $('#card'), slot = $('#slot'), tilesEl = $('#tiles'), wordEl = $('#word'), progressEl = $('#progress');
 
 let mode = null, items = [], idx = 0, tiles = [], mistakes = 0, busy = false;
@@ -271,6 +312,7 @@ let soundOn = true;
 function show(name) {
   for (const k in screens) screens[k].classList.toggle('hidden', k !== name);
   if (name === 'game') requestAnimationFrame(layout);
+  if (name === 'words') requestAnimationFrame(wLayout);
 }
 // Kad Aljoša jednom završi rundu sabiranja, sabiranje se dalje prikazuje samo brojevima.
 // Pamti se na uređaju (localStorage).
@@ -427,7 +469,10 @@ function layoutTiles() {
     el.style.fontSize = (size * (el.dataset.key.length > 1 ? 0.44 : 0.58)) + 'px';
   }
 }
-window.addEventListener('resize', () => { if (!screens.game.classList.contains('hidden')) layout(); });
+window.addEventListener('resize', () => {
+  if (!screens.game.classList.contains('hidden')) layout();
+  if (!screens.words.classList.contains('hidden')) wLayout();
+});
 
 // ---------- Prevlačenje (miš i dodir) ----------
 let drag = null;
@@ -593,16 +638,193 @@ function say(text) {
   speechSynthesis.speak(u);
 }
 
-// ---------- Dugmad ----------
-document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => { ensureAudio(); buildRound(b.dataset.mode); }));
-$('#homeBtn').addEventListener('click', () => { busy = true; show('menu'); });
-$('#menuBtn').addEventListener('click', () => show('menu'));
-$('#againBtn').addEventListener('click', () => buildRound(mode));
-$('#soundBtn').addEventListener('click', e => {
-  soundOn = !soundOn;
-  e.currentTarget.textContent = soundOn ? '🔊' : '🔇';
-  if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+// =====================================================================
+// ---------- SLAGANJE RIJEČI ----------
+// Riječi se pišu latinicom (velikim slovima); ćirilica se dobija preslovljavanjem.
+const WORD_LIST = [
+  ['PAS','🐶'], ['LAV','🦁'], ['ZEC','🐰'], ['NOS','👃'], ['SIR','🧀'], ['VOZ','🚂'], ['MIŠ','🐭'], ['JEŽ','🦔'],
+  ['KONJ','🐴'], ['KUĆA','🏠'], ['RIBA','🐟'], ['SOVA','🦉'], ['KIŠA','🌧️'], ['AUTO','🚗'], ['BROD','🚢'],
+  ['JAJE','🥚'], ['ŽABA','🐸'], ['OVCA','🐑'], ['KOZA','🐐'], ['KAPA','🧢'], ['DUGA','🌈'],
+  ['LOPTA','⚽'], ['SUNCE','☀️'], ['TORTA','🎂'], ['PČELA','🐝'],
+];
+const LAT2CYR = { A:'А', B:'Б', C:'Ц', 'Č':'Ч', 'Ć':'Ћ', D:'Д', 'DŽ':'Џ', 'Đ':'Ђ', E:'Е', F:'Ф', G:'Г', H:'Х', I:'И',
+  J:'Ј', K:'К', L:'Л', LJ:'Љ', M:'М', N:'Н', NJ:'Њ', O:'О', P:'П', R:'Р', S:'С', 'Š':'Ш', T:'Т', U:'У', V:'В', Z:'З', 'Ž':'Ж' };
+// razbija riječ na slova (Lj, Nj, Dž su jedno slovo)
+function tokenize(w) {
+  const out = [];
+  for (let i = 0; i < w.length;) {
+    const two = w.slice(i, i + 2);
+    if (two === 'LJ' || two === 'NJ' || two === 'DŽ') { out.push(two); i += 2; } else { out.push(w[i]); i++; }
+  }
+  return out;
+}
+const latDisplay = t => t.length > 1 ? t[0] + t[1].toLowerCase() : t;   // 'NJ' → 'Nj' kao na pločicama
+
+const wcard = $('#wcard'), slotsEl = $('#slots'), wtilesEl = $('#wtiles'), wprogressEl = $('#wprogress');
+let wItems = [], wIdx = 0, wPos = 0, wMistakes = 0, wBusy = false, wdrag = null;
+
+function buildWords(m) {
+  mode = m;
+  const cyr = m.startsWith('wordCyr'), lower = m.endsWith('L');
+  const fix = s => lower ? s.toLowerCase() : s;
+  const alphabet = (cyr ? CYR_ORDER : LETTERS.map(l => l[0])).map(fix);
+  // 10 nasumičnih riječi, od kraćih ka dužim
+  const pool = shuffle(WORD_LIST.slice()).slice(0, ROUND_SIZE)
+    .sort((a, b) => tokenize(a[0]).length - tokenize(b[0]).length);
+  wItems = pool.map(([w, pic]) => ({
+    pic, speak: w.toLowerCase(), alphabet,
+    letters: tokenize(w).map(t => fix(cyr ? LAT2CYR[t] : latDisplay(t))),
+  }));
+  wIdx = 0;
+  wprogressEl.innerHTML = wItems.map(() => '<span>⭐</span>').join('');
+  show('words');
+  showWord();
+}
+
+function showWord() {
+  const it = wItems[wIdx];
+  wPos = 0; wMistakes = 0; wBusy = false; wdrag = null;
+  wcard.innerHTML = `<span class="pic">${it.pic}</span>`;
+  wcard.classList.remove('pop'); void wcard.offsetWidth; wcard.classList.add('pop');
+  slotsEl.className = '';
+  slotsEl.innerHTML = it.letters.map((l, i) =>
+    `<div class="slot${l.length > 1 ? ' dig' : ''}${i === 0 ? ' next' : ''}"></div>`).join('');
+  // slova riječi + nekoliko "uljeza"
+  const extra = shuffle(it.alphabet.filter(a => !it.letters.includes(a))).slice(0, it.letters.length <= 3 ? 2 : 3);
+  wtilesEl.innerHTML = '';
+  for (const l of shuffle([...it.letters, ...extra])) {
+    const el = document.createElement('div');
+    el.className = 'tile'; el.textContent = l; el.dataset.key = l; el.dataset.len = l.length;
+    wtilesEl.appendChild(el);
+  }
+  wLayout();
+}
+
+function wLayout() {
+  const it = wItems[wIdx]; if (!it) return;
+  const top = $('#wtop').getBoundingClientRect();
+  const ws = Math.max(80, Math.min(top.height * 0.44, top.width * 0.4, 240));
+  wcard.style.setProperty('--ws', ws + 'px');
+  wcard.querySelector('.pic').style.fontSize = (ws * 0.66) + 'px';
+  const n = it.letters.length;
+  const sg = Math.max(6, Math.min(14, top.width * 0.015));
+  const ss = Math.max(44, Math.min((top.width * 0.9 - sg * (n - 1)) / n, top.height * 0.27, 120));
+  slotsEl.style.setProperty('--ss', ss + 'px');
+  slotsEl.style.setProperty('--sg', sg + 'px');
+  // pločice sa slovima
+  const r = $('#wboard').getBoundingClientRect();
+  const count = wtilesEl.children.length;
+  const gap = Math.max(8, Math.min(14, Math.min(r.width, r.height) * 0.02));
+  let best = { size: 0, cols: 1 };
+  for (let cols = 1; cols <= count; cols++) {
+    const rows = Math.ceil(count / cols);
+    const size = Math.min((r.width - gap * (cols - 1)) / cols, (r.height - gap * (rows - 1)) / rows);
+    if (size > best.size) best = { size, cols };
+  }
+  const size = Math.floor(Math.min(best.size, 130));
+  wtilesEl.style.setProperty('--gap', gap + 'px');
+  wtilesEl.style.gridTemplateColumns = `repeat(${best.cols}, ${size}px)`;
+  for (const el of wtilesEl.children) {
+    el.style.width = el.style.height = size + 'px';
+    el.style.fontSize = (size * (el.dataset.len > 1 ? 0.44 : 0.58)) + 'px';
+  }
+}
+
+wcard.addEventListener('click', () => { ensureAudio(); say(wItems[wIdx].speak); });
+
+// prevlačenje ili dodir slova
+wtilesEl.addEventListener('pointerdown', e => {
+  const el = e.target.closest('.tile');
+  if (!el || el.classList.contains('used') || wBusy || wdrag) return;
+  ensureAudio();
+  el.setPointerCapture(e.pointerId);
+  el.classList.add('dragging');
+  wdrag = { el, id: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, moved: false };
 });
+wtilesEl.addEventListener('pointermove', e => {
+  if (!wdrag || e.pointerId !== wdrag.id) return;
+  wdrag.dx = e.clientX - wdrag.x0; wdrag.dy = e.clientY - wdrag.y0;
+  if (Math.hypot(wdrag.dx, wdrag.dy) > 8) wdrag.moved = true;
+  if (wdrag.moved) wdrag.el.style.transform = `translate(${wdrag.dx}px, ${wdrag.dy}px) scale(1.1)`;
+});
+function wEndDrag(e) {
+  if (!wdrag || e.pointerId !== wdrag.id) return;
+  const d = wdrag; wdrag = null;
+  d.el.classList.remove('dragging');
+  if (e.type === 'pointercancel') { d.el.style.transform = ''; return; }
+  if (!d.moved) { placeLetter(d.el, 0, 0); return; }               // dodir
+  const s = slotsEl.getBoundingClientRect(), pad = 40;
+  const overSlots = e.clientX > s.left - pad && e.clientX < s.right + pad && e.clientY > s.top - pad && e.clientY < s.bottom + pad;
+  if (overSlots) placeLetter(d.el, d.dx, d.dy);
+  else d.el.style.transform = '';
+}
+wtilesEl.addEventListener('pointerup', wEndDrag);
+wtilesEl.addEventListener('pointercancel', wEndDrag);
+
+function placeLetter(el, dx, dy) {
+  if (wBusy) return;
+  const it = wItems[wIdx];
+  const expected = it.letters[wPos];
+  if (el.dataset.key !== expected) {
+    wMistakes++;
+    playBad();
+    el.style.transform = '';
+    el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad');
+    setTimeout(() => el.classList.remove('bad'), 600);
+    if (wMistakes >= 2) {
+      const right = [...wtilesEl.children].find(t => !t.classList.contains('used') && t.dataset.key === expected);
+      right && right.classList.add('hint');
+    }
+    return;
+  }
+  // tačno slovo: odleti u sljedeće prazno polje
+  wBusy = true;
+  const slot = slotsEl.children[wPos];
+  const r = el.getBoundingClientRect(), s = slot.getBoundingClientRect();
+  const tx = dx + (s.left + s.width / 2) - (r.left + r.width / 2);
+  const ty = dy + (s.top + s.height / 2) - (r.top + r.height / 2);
+  el.classList.remove('hint');
+  el.classList.add('fly');
+  el.style.transform = `translate(${tx}px, ${ty}px) scale(${s.width / r.width})`;
+  tone(660 + wPos * 80, 0, 0.15, 'triangle');
+  setTimeout(() => {
+    el.classList.remove('fly'); el.classList.add('used'); el.style.transform = '';
+    slot.textContent = expected;
+    slot.classList.remove('next'); slot.classList.add('filled');
+    wPos++; wMistakes = 0;
+    for (const t of wtilesEl.children) t.classList.remove('hint');
+    if (wPos >= it.letters.length) { wordDone(); return; }
+    slotsEl.children[wPos].classList.add('next');
+    wBusy = false;
+  }, 300);
+}
+
+function wordDone() {
+  const it = wItems[wIdx];
+  slotsEl.classList.add('done');
+  const s = slotsEl.getBoundingClientRect();
+  confetti(s.left + s.width / 2, s.top + s.height / 2);
+  playOk();
+  wprogressEl.children[wIdx].classList.add('on');
+  say(it.speak);
+  setTimeout(() => {
+    wIdx++;
+    if (wIdx >= wItems.length) { playWin(); show('end'); }
+    else showWord();
+  }, 2200);
+}
+
+// ---------- Dugmad ----------
+function startMode(m) { if (m.startsWith('word')) buildWords(m); else buildRound(m); }
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => { ensureAudio(); startMode(b.dataset.mode); }));
+document.querySelectorAll('.home-btn').forEach(b => b.addEventListener('click', () => { busy = true; wBusy = true; show('menu'); }));
+$('#menuBtn').addEventListener('click', () => show('menu'));
+$('#againBtn').addEventListener('click', () => startMode(mode));
+document.querySelectorAll('.sound-btn').forEach(b => b.addEventListener('click', () => {
+  soundOn = !soundOn;
+  document.querySelectorAll('.sound-btn').forEach(x => x.textContent = soundOn ? '🔊' : '🔇');
+  if (!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel();
+}));
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 // Instalacija kao aplikacija (PWA) - samo kad je igra na svom sajtu, ne unutar Google Sites okvira
