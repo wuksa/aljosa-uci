@@ -1,6 +1,6 @@
 // Service worker: čuva igru u memoriji uređaja da radi i bez interneta.
 // Kad mijenjaš igru, povećaj broj verzije da bi se tablet osvježio.
-const CACHE = 'aljosa-uci-v2';
+const CACHE = 'aljosa-uci-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

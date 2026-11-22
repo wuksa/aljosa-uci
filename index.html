@@ -41,22 +41,46 @@
   .hidden { display: none !important; }
 
   /* ---------- MENI ---------- */
-  #menu { align-items: center; justify-content: center; gap: 2.5vmin; overflow-y: auto; }
-  #menu h1 { margin: 0 0 1vmin; font-size: clamp(36px, 9vmin, 84px); letter-spacing: 1px;
+  #menu { overflow-y: auto; touch-action: pan-y; }
+  .menu-inner { margin: auto; width: min(1100px, 100%); display: flex; flex-direction: column; align-items: center; gap: 3vmin; padding: 1vmin 0; }
+  #menu h1 { margin: 0; font-size: clamp(36px, 9vmin, 84px); letter-spacing: 1px;
     color: #ff7a00; text-shadow: 0 4px 0 #ffd0a0; text-align: center; }
   #menu h1 span { display: inline-block; animation: bob 2.4s ease-in-out infinite; }
-  .modes { display: grid; gap: 2vmin; width: min(560px, 100%); grid-template-columns: 1fr; }
-  .mode { display: flex; align-items: center; gap: 16px; text-align: left;
-    padding: 2.2vmin 22px; border-radius: 26px; background: var(--card); box-shadow: var(--shadow);
-    font-size: clamp(18px, 3vmin, 26px); font-weight: 700; transition: transform .12s; }
+  .groups { display: grid; gap: 2.5vmin; width: 100%; grid-template-columns: repeat(3, 1fr); align-items: start; }
+  @media (max-aspect-ratio: 1/1) {
+    .groups { grid-template-columns: 1fr 1fr; width: min(720px, 100%); }
+    .group.num { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); }
+    .group.num h2 { grid-column: 1 / -1; }
+    .group.num .mode { flex-direction: column; gap: 8px; text-align: center; }
+  }
+  @media (max-width: 520px) and (max-aspect-ratio: 1/1) {
+    .groups { grid-template-columns: 1fr; }
+    .group.num { display: flex; }
+    .group.num .mode { flex-direction: row; text-align: left; }
+  }
+  .group { --c: #ff7a00; background: rgba(255,255,255,.55); border-radius: 30px; padding: 14px;
+    display: flex; flex-direction: column; gap: 12px; border: 3px solid color-mix(in srgb, var(--c) 35%, transparent); }
+  .group.lat { --c: #3a86ff; }
+  .group.cyr { --c: #8338ec; }
+  .group h2 { margin: 0 0 2px; text-align: center; color: var(--c); font-size: clamp(22px, 3.8vmin, 34px); }
+  .mode { display: flex; align-items: center; gap: 14px; text-align: left;
+    padding: 1.8vmin 16px; border-radius: 22px; background: var(--card); box-shadow: var(--shadow);
+    font-size: clamp(18px, 2.8vmin, 24px); font-weight: 700; transition: transform .12s; }
   .mode:active { transform: translateY(4px) scale(.98); }
-  .mode .badge { flex: 0 0 auto; min-width: 2.9em; padding: .35em .5em; border-radius: 18px; color: #fff;
-    font-size: 1.25em; font-weight: 800; text-align: center; letter-spacing: 2px; }
-  .mode:nth-child(1) .badge { background: #ff7a00; }
-  .mode:nth-child(2) .badge { background: #3a86ff; }
-  .mode:nth-child(3) .badge { background: #00b4d8; }
-  .mode:nth-child(4) .badge { background: #8338ec; }
-  .mode:nth-child(5) .badge { background: #e5489b; }
+  .mode .badge { flex: 0 0 auto; min-width: 3.1em; padding: .35em .45em; border-radius: 16px; color: #fff;
+    background: var(--c); font-size: 1.2em; font-weight: 800; text-align: center; letter-spacing: 1px; white-space: nowrap; }
+
+  /* zadatak sa sabiranjem / oduzimanjem */
+  #card .math { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4%; pointer-events: none; }
+  #card .math .row { display: flex; align-items: center; justify-content: center; gap: 4%; width: 92%; height: 62%; }
+  #card .math .grp { display: grid; gap: 2px; place-items: center; align-content: center; }
+  #card .math .op { font-weight: 900; color: #ff7a00; line-height: 1; }
+  #card .math .gone { position: relative; }
+  #card .math .gone .ghost { opacity: .3; filter: grayscale(.6); }
+  #card .math .gone::after { content: '✕'; position: absolute; inset: 0; display: grid; place-items: center;
+    color: #ff2d2d; font-weight: 900; font-size: 1.1em; font-family: Arial, sans-serif; }
+  #game.math #top { flex-basis: 48%; }
+  #card .math .expr { font-weight: 900; color: var(--tile-ink); line-height: 1; letter-spacing: 2px; }
 
   /* ---------- IGRA ---------- */
   #game { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
@@ -70,7 +94,7 @@
 
   #top { flex: 0 0 40%; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
   #hint { font-size: clamp(15px, 2.6vmin, 22px); opacity: .7; margin-bottom: 1vmin; font-weight: 600; text-align: center; }
-  #slot { position: relative; width: var(--cs, 200px); height: var(--cs, 200px); }
+  #slot { position: relative; width: var(--cw, var(--cs, 200px)); height: var(--cs, 200px); }
   #card { position: absolute; inset: 0; border-radius: 28px; background: var(--card); box-shadow: var(--shadow);
     display: grid; place-items: center; touch-action: none; cursor: grab; z-index: 10;
     transition: transform .35s cubic-bezier(.3,1.4,.5,1), opacity .35s; will-change: transform; }
@@ -120,13 +144,26 @@
 <body>
 
 <div id="menu" class="screen">
-  <h1><span>Aljoša uči</span> 🦉</h1>
-  <div class="modes">
-    <button class="mode" data-mode="num"><span class="badge">123</span>Brojevi</button>
-    <button class="mode" data-mode="latU"><span class="badge">ABC</span>Velika latinična slova</button>
-    <button class="mode" data-mode="latL"><span class="badge">abc</span>Mala latinična slova</button>
-    <button class="mode" data-mode="cyrU"><span class="badge">АБВ</span>Velika ćirilična slova</button>
-    <button class="mode" data-mode="cyrL"><span class="badge">абв</span>Mala ćirilična slova</button>
+  <div class="menu-inner">
+    <h1><span>Aljoša uči</span> 🦉</h1>
+    <div class="groups">
+      <div class="group num">
+        <h2>Brojevi</h2>
+        <button class="mode" data-mode="num"><span class="badge">123</span>Brojanje</button>
+        <button class="mode" data-mode="add"><span class="badge">2+1</span>Sabiranje</button>
+        <button class="mode" data-mode="sub"><span class="badge">3−1</span>Oduzimanje</button>
+      </div>
+      <div class="group lat">
+        <h2>Latinica</h2>
+        <button class="mode" data-mode="latU"><span class="badge">ABC</span>Velika slova</button>
+        <button class="mode" data-mode="latL"><span class="badge">abc</span>Mala slova</button>
+      </div>
+      <div class="group cyr">
+        <h2>Ćirilica</h2>
+        <button class="mode" data-mode="cyrU"><span class="badge">АБВ</span>Velika slova</button>
+        <button class="mode" data-mode="cyrL"><span class="badge">абв</span>Mala slova</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -173,6 +210,15 @@ const SVG_BREAD = `<svg viewBox="0 0 100 100" width="1em" height="1em">
   <path d="M28 40 L36 56 M44 34 L52 52 M60 34 L68 52 M74 40 L80 54" stroke="#f3d29b" stroke-width="5" stroke-linecap="round"/>
 </svg>`;
 
+const SVG_NEEDLE = `<svg viewBox="0 0 100 100" width="1em" height="1em">
+  <g transform="rotate(40 50 50)">
+    <path d="M46 8 C46 4 54 4 54 8 L53 84 L50 97 L47 84 Z" fill="#c3c9d1" stroke="#6c727b" stroke-width="2" stroke-linejoin="round"/>
+    <ellipse cx="50" cy="15" rx="1.8" ry="5" fill="#fff" stroke="#6c727b" stroke-width="1.5"/>
+    <rect x="48.5" y="24" width="1.6" height="56" fill="#fff" opacity=".7"/>
+  </g>
+  <path d="M72 23 C88 8 99 34 86 46 C72 58 86 78 96 86" fill="none" stroke="#e63946" stroke-width="3.5" stroke-linecap="round"/>
+</svg>`;
+
 // [latinično slovo, ćirilično slovo, riječ latinicom, riječ ćirilicom, sličica]
 const LETTERS = [
   ['A','А','avion','авион','✈️'],
@@ -187,7 +233,7 @@ const LETTERS = [
   ['F','Ф','foka','фока','🦭'],
   ['G','Г','grožđe','грожђе','🍇'],
   ['H','Х','hljeb','хљеб', SVG_BREAD],
-  ['I','И','irvas','ирвас','🦌'],
+  ['I','И','igla','игла', SVG_NEEDLE],
   ['J','Ј','jabuka','јабука','🍎'],
   ['K','К','kuća','кућа','🏠'],
   ['L','Л','lav','лав','🦁'],
@@ -234,6 +280,23 @@ function buildRound(m) {
       return { key: String(n), count: n, pic: NUM_PICS[Math.random() * NUM_PICS.length | 0],
                word: NUM_WORDS[n], speak: NUM_WORDS[n], hlLen: 0 };
     }));
+  } else if (m === 'add' || m === 'sub') {
+    tiles = Array.from({ length: 11 }, (_, i) => String(i));
+    const seen = new Set();
+    items = [];
+    while (items.length < ROUND_SIZE) {
+      let a, b, res;
+      if (m === 'add') { a = 1 + (Math.random() * 9 | 0); b = 1 + (Math.random() * (10 - a) | 0); res = a + b; }
+      else { a = 2 + (Math.random() * 9 | 0); b = 1 + (Math.random() * (a - 1) | 0); res = a - b; }
+      const id = a + m + b;
+      if (seen.has(id) && seen.size < 30) continue;
+      seen.add(id);
+      const sign = m === 'add' ? '+' : '−';
+      const opWord = m === 'add' ? 'plus' : 'minus';
+      items.push({ key: String(res), kind: m, a, b, pic: NUM_PICS[Math.random() * NUM_PICS.length | 0],
+                   expr: `${a} ${sign} ${b}`, ask: `${NUM_WORDS[a]} ${opWord} ${NUM_WORDS[b]}`,
+                   speak: `${NUM_WORDS[a]} ${opWord} ${NUM_WORDS[b]} je ${NUM_WORDS[res]}` });
+    }
   } else {
     const cyr = m.startsWith('cyr'), lower = m.endsWith('L');
     const fix = s => lower ? s.toLowerCase() : s;
@@ -253,6 +316,7 @@ function buildRound(m) {
     tilesEl.appendChild(el);
   }
   progressEl.innerHTML = items.map(() => '<span>⭐</span>').join('');
+  screens.game.classList.toggle('math', m === 'add' || m === 'sub');
   show('game');
   showItem();
 }
@@ -263,7 +327,16 @@ function showItem() {
   wordEl.textContent = ''; wordEl.classList.remove('show');
   for (const el of tilesEl.children) el.classList.remove('ok', 'bad', 'hint', 'over');
   card.className = ''; card.style.transform = ''; card.style.opacity = '';
-  if (it.count === 1) card.innerHTML = `<span class="pic">${it.pic}</span>`;
+  $('#hint').textContent = it.kind ? 'Koliko je? Prevuci zadatak na pravi broj'
+                         : mode === 'num' ? 'Koliko ih ima? Prevuci sličicu na pravi broj'
+                         : 'Prevuci sličicu na pravo slovo';
+  const pics = n => Array(n).fill(`<span class="pic">${it.pic}</span>`).join('');
+  if (it.kind === 'add') {
+    card.innerHTML = `<div class="math"><div class="row"><div class="grp">${pics(it.a)}</div><span class="op">+</span><div class="grp">${pics(it.b)}</div></div><div class="expr">${it.expr} = ?</div></div>`;
+  } else if (it.kind === 'sub') {
+    const keep = pics(it.a - it.b), gone = Array(it.b).fill(`<span class="pic gone"><span class="ghost">${it.pic}</span></span>`).join('');
+    card.innerHTML = `<div class="math"><div class="row"><div class="grp">${keep}${gone}</div></div><div class="expr">${it.expr} = ?</div></div>`;
+  } else if (it.count === 1) card.innerHTML = `<span class="pic">${it.pic}</span>`;
   else card.innerHTML = `<div class="many">${Array(it.count).fill(`<span class="pic">${it.pic}</span>`).join('')}</div>`;
   sizeCard();
   void card.offsetWidth; card.classList.add('pop');
@@ -272,11 +345,43 @@ function showItem() {
 // ---------- Raspored (prilagođava se ekranu) ----------
 function layout() { sizeCard(); layoutTiles(); }
 
+// najveća veličina za n jednakih kvadratića u prostoru w × h
+function fitGrid(n, w, h) {
+  let best = { cols: 1, size: 0 };
+  for (let cols = 1; cols <= n; cols++) {
+    const rows = Math.ceil(n / cols);
+    const size = Math.min(w / cols, h / rows);
+    if (size > best.size) best = { cols, size };
+  }
+  return best;
+}
+
 function sizeCard() {
   const top = $('#top').getBoundingClientRect();
-  const cs = Math.max(90, Math.min(top.height * 0.62, top.width * 0.6, 360));
+  const it = items[idx];
+  const cs = Math.max(90, Math.min(top.height * (it && it.kind ? 0.7 : 0.62), top.width * 0.6, 360));
   slot.style.setProperty('--cs', cs + 'px');
-  const it = items[idx]; if (!it) return;
+  if (!it) return;
+  slot.style.removeProperty('--cw');
+  if (it.kind) {
+    const cw = Math.min(top.width * 0.94, cs * 2);
+    slot.style.setProperty('--cw', cw + 'px');
+    const rowH = cs * 0.58, rowW = cw * 0.9;
+    const op = card.querySelector('.op');
+    const opW = op ? cs * 0.2 : 0;
+    if (op) op.style.fontSize = (cs * 0.24) + 'px';
+    card.querySelector('.expr').style.fontSize = (cs * 0.19) + 'px';
+    const grps = card.querySelectorAll('.grp');
+    const gw = (rowW - opW - 16) / grps.length;
+    // ista veličina sličica u obje grupe, da djeca ne bi brojala po veličini
+    const fits = [...grps].map(g => fitGrid(g.children.length, gw, rowH));
+    const size = Math.min(...fits.map(f => f.size), cs * 0.4);
+    grps.forEach((g, i) => {
+      g.style.gridTemplateColumns = `repeat(${fits[i].cols}, auto)`;
+      g.querySelectorAll(':scope > .pic').forEach(p => p.style.fontSize = (size * 0.8) + 'px');
+    });
+    return;
+  }
   if (it.count === 1) {
     card.querySelector('.pic').style.fontSize = (cs * 0.62) + 'px';
   } else {
@@ -338,7 +443,7 @@ function endDrag(e) {
   const d = drag; drag = null;
   card.classList.remove('dragging');
   d.over && d.over.classList.remove('over');
-  if (!d.moved) { card.style.transform = ''; say(items[idx].speak); return; } // dodir = izgovori reč
+  if (!d.moved) { card.style.transform = ''; say(items[idx].ask || items[idx].speak); return; } // dodir = izgovori reč
   const t = e.type === 'pointerup' ? tileAt(e.clientX, e.clientY) : null;
   if (!t) { card.style.transform = ''; return; }
   if (t.dataset.key === items[idx].key) correct(t, e.clientX - d.x0, e.clientY - d.y0);
@@ -371,7 +476,8 @@ function correct(tile, curDx, curDy) {
   progressEl.children[idx].classList.add('on');
   // prikaži reč, prvo slovo istaknuto
   const w = it.word;
-  wordEl.innerHTML = it.hlLen
+  wordEl.innerHTML = it.kind ? `${it.expr} = <span class="hl">${it.key}</span>`
+    : it.hlLen
     ? `<span class="hl">${w.slice(0, it.hlLen)}</span>${w.slice(it.hlLen)}`
     : `<span class="hl">${it.key}</span> – ${w}`;
   wordEl.classList.add('show');
