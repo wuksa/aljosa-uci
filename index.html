@@ -272,6 +272,13 @@ function show(name) {
   for (const k in screens) screens[k].classList.toggle('hidden', k !== name);
   if (name === 'game') requestAnimationFrame(layout);
 }
+// Kad Aljoša jednom završi rundu sabiranja, sabiranje se dalje prikazuje samo brojevima.
+// Pamti se na uređaju (localStorage).
+const ADD_KEY = 'aljosa.sabiranjeSamoBrojevi';
+let addOnlyMem = false; // rezerva ako uređaj ne dozvoljava localStorage
+function addOnlyNumbers() { try { if (localStorage.getItem(ADD_KEY) === '1') return true; } catch (e) {} return addOnlyMem; }
+function setAddOnlyNumbers() { addOnlyMem = true; try { localStorage.setItem(ADD_KEY, '1'); } catch (e) {} }
+
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
 // ---------- Priprema runde ----------
@@ -335,7 +342,9 @@ function showItem() {
                          : mode === 'num' ? 'Koliko ih ima? Prevuci sličicu ili dodirni pravi broj'
                          : 'Prevuci sličicu ili dodirni pravo slovo';
   const pics = n => Array(n).fill(`<span class="pic">${it.pic}</span>`).join('');
-  if (it.kind === 'add') {
+  if (it.kind === 'add' && addOnlyNumbers()) {
+    card.innerHTML = `<div class="math"><div class="expr">${it.expr} = ?</div></div>`;
+  } else if (it.kind === 'add') {
     card.innerHTML = `<div class="math"><div class="row"><div class="grp">${pics(it.a)}</div><span class="op">+</span><div class="grp">${pics(it.b)}</div></div><div class="expr">${it.expr} = ?</div></div>`;
   } else if (it.kind === 'sub') {
     const keep = pics(it.a - it.b), gone = Array(it.b).fill(`<span class="pic gone"><span class="ghost">${it.pic}</span></span>`).join('');
@@ -374,8 +383,9 @@ function sizeCard() {
     const op = card.querySelector('.op');
     const opW = op ? cs * 0.2 : 0;
     if (op) op.style.fontSize = (cs * 0.24) + 'px';
-    card.querySelector('.expr').style.fontSize = (cs * 0.19) + 'px';
     const grps = card.querySelectorAll('.grp');
+    // bez sličica zadatak je veliki, preko cijele kartice
+    card.querySelector('.expr').style.fontSize = (grps.length ? cs * 0.19 : Math.min(cs * 0.42, cw * 0.15)) + 'px';
     const gw = (rowW - opW - 16) / grps.length;
     // ista veličina sličica u obje grupe, da djeca ne bi brojala po veličini
     const fits = [...grps].map(g => fitGrid(g.children.length, gw, rowH));
@@ -510,7 +520,10 @@ function correct(tile) {
   say(it.speak);
   setTimeout(() => {
     idx++;
-    if (idx >= items.length) { playWin(); show('end'); }
+    if (idx >= items.length) {
+      if (mode === 'add') setAddOnlyNumbers();   // prva završena runda sabiranja → dalje samo brojevi
+      playWin(); show('end');
+    }
     else showItem();
   }, 2000);
 }
